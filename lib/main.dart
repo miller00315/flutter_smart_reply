@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:google_mlkit_smart_reply/google_mlkit_smart_reply.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,13 +32,19 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController senderTextEditingController = TextEditingController();
   TextEditingController receivedEditingController = TextEditingController();
   String result = 'Suggestions...';
-
+  late SmartReply smartReply;
 
   @override
   void initState() {
-    // TODO: implement initState
-    super.initState();
+    smartReply = SmartReply();
 
+    super.initState();
+  }
+
+  @override
+  void dispose() async {
+    await smartReply.close();
+    super.dispose();
   }
 
   @override
@@ -47,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
       home: Scaffold(
           body: SafeArea(
               child: Container(
-              decoration: const BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
               image: AssetImage('images/bg.jpg'), fit: BoxFit.cover),
         ),
@@ -81,14 +87,31 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: () async {
-                        receivedEditingController.clear();
+                    onPressed: () {
+                      smartReply.addMessageToConversationFromRemoteUser(
+                        receivedEditingController.text,
+                        DateTime.now().millisecondsSinceEpoch,
+                        "userId",
+                      );
+
+                      receivedEditingController.clear();
+
+                      smartReply.suggestReplies().then(
+                            (response) => setState(
+                              () {
+                                print("passei aqui");
+                                print(response.suggestions);
+
+                                result = response.suggestions.join('\n');
+                              },
+                            ),
+                          );
                     },
                     style: ElevatedButton.styleFrom(
                         shape: const CircleBorder(),
+                        backgroundColor: Colors.red,
                         padding: const EdgeInsets.only(
-                            top: 13, left: 15, bottom: 13, right: 12),
-                        primary: Colors.red),
+                            top: 13, left: 15, bottom: 13, right: 12)),
                     child: const Icon(
                       Icons.send,
                       size: 25,
@@ -145,14 +168,23 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      senderTextEditingController.clear();
+                    onPressed: () => {
+                      smartReply.addMessageToConversationFromLocalUser(
+                        senderTextEditingController.text,
+                        DateTime.now().millisecondsSinceEpoch,
+                      ),
+                      senderTextEditingController.clear(),
                     },
                     style: ElevatedButton.styleFrom(
-                        shape: const CircleBorder(),
-                        padding: const EdgeInsets.only(
-                            top: 13, left: 15, bottom: 13, right: 12),
-                        primary: Colors.green),
+                      shape: const CircleBorder(),
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.only(
+                        top: 13,
+                        left: 15,
+                        bottom: 13,
+                        right: 12,
+                      ),
+                    ),
                     child: const Icon(
                       Icons.send,
                       size: 25,
